@@ -1,0 +1,18 @@
+# deps
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# env & secrets — never commit
+.env
+.env.*
+*.pem
+
+# builds
+dist/
+.expo/
+*.tsbuildinfo
+
+# OS
+.DS_Store

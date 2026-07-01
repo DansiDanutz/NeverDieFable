@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "NeverDie",
+    "slug": "neverdie",
+    "version": "0.1.0",
+    "scheme": "neverdie",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0E14",
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "NeverDie records voice notes, meetings and voice-print samples you choose to keep.",
+        "NSCameraUsageDescription": "NeverDie captures photos and documents for your vault.",
+        "NSPhotoLibraryUsageDescription": "NeverDie imports the photos you choose into your encrypted vault.",
+        "NSFaceIDUsageDescription": "Face ID unlocks your encrypted vault."
+      }
+    },
+    "android": {
+      "package": "com.neverdie.app",
+      "permissions": ["RECORD_AUDIO", "CAMERA"]
+    },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}
