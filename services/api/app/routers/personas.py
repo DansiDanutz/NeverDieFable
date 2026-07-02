@@ -2,8 +2,9 @@
 
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter
+from fastapi import APIRouter, UploadFile
 
+from app import engine
 from app.schemas import PersonaCreate
 
 router = APIRouter()
@@ -24,6 +25,23 @@ async def build_voice(persona_id: UUID) -> dict:
     Pipeline: pyannote isolates the target speaker → Fish Speech voice print."""
     # TODO: queue.enqueue("voice_print", persona_id)
     return {"persona_id": str(persona_id), "job": "voice_print", "status": "queued"}
+
+
+@router.post("/{persona_id}/voice/clone")
+async def clone_voice(persona_id: UUID, sample: UploadFile) -> dict:
+    """Instant voice clone from one uploaded sample (30s–3min of clean speech).
+
+    Today: ElevenLabs instant cloning (fastest path to a speaking persona).
+    Later: self-hosted Fish Speech behind the same endpoint. The resulting
+    voice speaks in /chat replies immediately."""
+    from ai.voice import clone_elevenlabs
+
+    audio = await sample.read()
+    voice_id = clone_elevenlabs(f"neverdie-{persona_id}", audio,
+                                filename=sample.filename or "sample.mp3")
+    ref = f"elevenlabs:{voice_id}"
+    engine.set_persona_voice(str(persona_id), ref)
+    return {"persona_id": str(persona_id), "voice_ref": ref, "status": "ready"}
 
 
 @router.post("/{persona_id}/avatar")

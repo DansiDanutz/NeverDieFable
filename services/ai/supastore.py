@@ -55,7 +55,7 @@ class SupabaseStore:
         r = httpx.get(
             f"{self.base}/persona",
             headers=self.headers,
-            params={"select": "id,kind,mode,person_id,card_version,"
+            params={"select": "id,kind,mode,person_id,card_version,voice_model_ref,"
                               "person:person_id(full_name,relationship,is_departed),"
                               "persona_card(version,card)"},
             timeout=15,
@@ -72,5 +72,17 @@ class SupabaseStore:
                 "mode": row["mode"],
                 "person_id": row.get("person_id") or "self",
                 "card": (cards[-1]["card"] if cards else None),
+                "voice_ref": row.get("voice_model_ref"),
             }
         return out
+
+    def set_voice(self, persona_id: str, voice_ref: str) -> None:
+        """Persist a cloned voice on the persona ('elevenlabs:<voice_id>')."""
+        r = httpx.patch(
+            f"{self.base}/persona",
+            headers=self.headers,
+            params={"id": f"eq.{persona_id}"},
+            json={"voice_model_ref": voice_ref},
+            timeout=15,
+        )
+        r.raise_for_status()

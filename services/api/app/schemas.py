@@ -76,6 +76,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     text: str
+    audio_b64: str | None = None  # spoken reply (MP3) when the persona has a voice
     audio_ref: str | None = None
     video_ref: str | None = None
     cited_items: list[UUID] = []

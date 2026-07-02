@@ -43,6 +43,26 @@ def synthesize(text: str, voice: VoicePrint, *, streaming: bool = True) -> bytes
     raise NotImplementedError("wire to Chatterbox/Fish Speech worker")
 
 
+def clone_elevenlabs(name: str, audio: bytes, filename: str = "sample.mp3") -> str:
+    """Instant voice clone from one clean sample (30s–3min is the sweet spot).
+    Returns the new voice_id — store it as persona.voice_model_ref
+    ('elevenlabs:<id>'). Requires a paid ElevenLabs tier."""
+    import os
+
+    import httpx
+
+    key = os.environ["ELEVENLABS_API_KEY"]
+    r = httpx.post(
+        "https://api.elevenlabs.io/v1/voices/add",
+        headers={"xi-api-key": key},
+        data={"name": name},
+        files={"files": (filename, audio, "audio/mpeg")},
+        timeout=120,
+    )
+    r.raise_for_status()
+    return r.json()["voice_id"]
+
+
 def synthesize_elevenlabs(text: str, voice_id: str) -> bytes:
     """Premium/commercial fallback via ElevenLabs (ELEVENLABS_API_KEY).
 

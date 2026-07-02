@@ -68,3 +68,13 @@ def chat_turn(persona_id: str, message: str, history: list[dict[str, str]]):
 
 def ask(query: str, person_id: str = "self"):
     return memory_engine.answer(query, STORE, person_id=person_id)
+
+
+def set_persona_voice(persona_id: str, voice_ref: str) -> None:
+    """Persist a cloned voice and refresh the registry cache."""
+    global _persona_cache
+    if LIVE:
+        STORE.set_voice(persona_id, voice_ref)
+        _persona_cache = None
+    else:
+        _DEMO_PERSONAS.setdefault(persona_id, dict(_DEMO_PERSONAS["self"]))["voice_ref"] = voice_ref
