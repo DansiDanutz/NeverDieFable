@@ -169,6 +169,56 @@ def circle_members(persona_id: str) -> list[dict]:
     return STORE.circle_members(c["circle_id"]) if c else []
 
 
+def register_push(token: str, platform: str = "unknown") -> dict:
+    """Enroll a device for the daily nudge. Idempotent per token."""
+    if not LIVE:
+        return {"status": "demo"}
+    STORE.push_register(token, platform)
+    return {"status": "registered"}
+
+
+def send_daily_push() -> dict:
+    """The proactive heartbeat: make sure today's ritual is queued, then deliver
+    one gentle invitation to every enrolled device. Called by a scheduler (cron)
+    once a day — the habit loop that keeps the brain growing without nagging.
+
+    The copy leans on the loved one whose garden most needs tending, because
+    "Eva is waiting to remember with you" pulls far harder than "you have 3
+    pending questions." Best-effort: a push failure never breaks the queue."""
+    if not LIVE:
+        return {"status": "demo"}
+
+    ritual = daily_ritual(3)
+    streak = ritual.get("streak", 0)
+    questions = ritual.get("questions", [])
+
+    # find a departed loved one to center the invitation on
+    reg = personas()
+    departed = [p for p in reg.values() if p.get("kind") == "departed"]
+    loved = departed[0]["name"] if departed else None
+
+    if loved:
+        title = f"{loved} is waiting in the garden"
+        body = questions[0]["question"] if questions else \
+            f"Come remember a moment with {loved} today."
+    else:
+        title = "Your mind is ready to remember"
+        body = questions[0]["question"] if questions else \
+            "Add one memory today — future you will thank you."
+
+    if streak > 1:
+        title = f"🔥 {streak}-day streak · {title}"
+
+    from ai import push
+    tokens = [d["expo_token"] for d in STORE.push_devices()]
+    try:
+        result = push.send_expo(tokens, title, body,
+                                data={"kind": "daily_ritual", "streak": streak})
+    except Exception as e:  # never let delivery break the ritual
+        return {"status": "queued_no_push", "error": str(e), "streak": streak}
+    return {"status": "sent", "streak": streak, **result}
+
+
 def ingest_uploaded(item_id: str, persona_id: str | None = None) -> dict:
     """A newly-uploaded vault item becomes embedded memory of the right person.
     persona_id tags a photo/voice of a departed loved one to THEIR corpus."""

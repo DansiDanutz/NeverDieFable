@@ -126,6 +126,13 @@ export const api = {
 
   circleMembers: (personaId: string) =>
     req<{ members: CircleMember[] }>(`/circle/${personaId}/members`),
+
+  /** Enroll this device's Expo push token for the daily ritual nudge. */
+  registerPush: (token: string, platform: string) =>
+    req<{ status: string }>(
+      `/push/register?token=${encodeURIComponent(token)}&platform=${platform}`,
+      { method: 'POST' },
+    ),
 };
 
 export type CircleMember = {

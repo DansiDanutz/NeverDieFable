@@ -228,6 +228,15 @@ class SupabaseStore:
     def circle_members(self, circle_id: str) -> list[dict]:
         return self._rpc("circle_members", {"p_circle": circle_id}) or []
 
+    # ── push devices (daily nudge delivery) ────────────────────────────
+
+    def push_register(self, token: str, platform: str = "unknown") -> None:
+        self._rpc("push_register", {"p_owner": self.default_owner_cached(),
+                                    "p_token": token, "p_platform": platform})
+
+    def push_devices(self) -> list[dict]:
+        return self._rpc("push_devices", {"p_owner": self.default_owner_cached()}) or []
+
     def list_personas(self) -> dict[str, dict]:
         """Personas + latest card + person info, keyed by persona id."""
         r = httpx.get(

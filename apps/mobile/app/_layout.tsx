@@ -1,9 +1,15 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { registerForDailyNudge } from '@/push';
 import { colors } from '@/theme';
 
 export default function RootLayout() {
+  // Enroll this device for the daily ritual nudge (idempotent, best-effort).
+  useEffect(() => {
+    void registerForDailyNudge();
+  }, []);
+
   return (
     <>
       <StatusBar style="light" />

@@ -17,10 +17,11 @@ These are the exact migrations applied to the live Supabase project
 | 10 | `0010_legacy_protocol.sql` | The Legacy Protocol state machine: check-in, verifier quorum, inheritance rules, unseal — 'if I die, everything remains' |
 | 11 | `0011_daily_ritual.sql` | Streak tracking (`companion_activity`, `companion_touch`, `companion_streak`) — the daily habit loop |
 | 12 | `0012_memory_circle.sql` | The family viral loop: `circle_invite` + `circle_contributor` tables and the `circle_for_persona/invite_create/join/contribute/members` RPCs — family joins a loved one's garden by token and everyone's stories grow the same corpus |
+| 13 | `0013_push_notifications.sql` | The daily nudge: `push_device` table + `push_register`/`push_devices` RPCs — enrolled devices get one warm invitation a day back into the ritual (delivery via Expo, scheduled by cron) |
 
 `db/schema.sql` is the human-readable, schema-qualified reference for the same
 model. Apply migrations in order; all are idempotent where practical.
-All twelve are **applied to the live project** as of 2026-07-02.
+All thirteen are **applied to the live project** as of 2026-07-02.
 
 **Existing data:** the project already had an `nd_avatars`/`nd_memories`
 avatar model and 94k rows of `chat_history` from earlier work. Those tables are
