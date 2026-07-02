@@ -100,6 +100,24 @@ export const api = {
   legacyRules: () =>
     req<{ rules: LegacyRule[] }>('/legacy/rules'),
 
+  /** Instant voice clone: upload one clean sample (~30s–3min) of the person
+   *  speaking. The persona then replies aloud in their own voice. */
+  cloneVoice: async (personaId: string, uri: string, mimeType = 'audio/m4a') => {
+    const form = new FormData();
+    // React Native FormData file part: { uri, name, type }
+    form.append('sample', {
+      uri,
+      name: `voice-${personaId}.${mimeType.split('/')[1] ?? 'm4a'}`,
+      type: mimeType,
+    } as unknown as Blob);
+    const res = await fetch(`${BASE}/personas/${personaId}/voice/clone`, {
+      method: 'POST',
+      body: form, // let fetch set the multipart boundary; do NOT set Content-Type
+    });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    return res.json() as Promise<{ persona_id: string; voice_ref: string; status: string }>;
+  },
+
   circleInvite: (personaId: string) =>
     req<{ token: string; persona: string; join_url: string }>(
       `/circle/${personaId}/invite`,

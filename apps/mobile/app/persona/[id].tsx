@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { api, ApiPersona } from '@/api';
 import { Avatar } from '@/components/Avatar';
+import { VoiceEnroll } from '@/components/VoiceEnroll';
 import { colors, spacing, type } from '@/theme';
 
 type Msg = { role: 'me' | 'them'; text: string; citations?: string[] };
@@ -109,6 +110,13 @@ export default function PersonaChat() {
           <Text style={styles.invite} onPress={invite}>
             {inviteMsg ?? '👪 Invite family to their garden'}
           </Text>
+        )}
+        {persona && !persona.has_voice && (
+          <VoiceEnroll
+            personaId={String(id)}
+            departed={departed}
+            onEnrolled={() => setPersona((p) => (p ? { ...p, has_voice: true } : p))}
+          />
         )}
       </View>
 
