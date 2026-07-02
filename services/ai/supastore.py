@@ -24,18 +24,9 @@ class SupabaseStore:
             "Content-Profile": "neverdie",
         }
 
-    def retrieve(self, query: str, person_id: str, k: int = 6) -> list[Hit]:
-        """person_id: 'self' (the owner's corpus, person_id NULL) or a person uuid."""
-        p_person = None if person_id == "self" else person_id
-        r = httpx.post(
-            f"{self.base}/rpc/search_memory",
-            headers=self.headers,
-            json={"q": query, "p_person": p_person, "k": k},
-            timeout=15,
-        )
-        r.raise_for_status()
+    def _rows_to_hits(self, rows: list[dict], person_id: str, score_key: str) -> list[Hit]:
         hits = []
-        for row in r.json():
+        for row in rows:
             meta = row.get("meta") or {}
             when = str(meta.get("at") or "")[:10]
             sender = meta.get("sender") or meta.get("source") or "memory"
@@ -46,9 +37,63 @@ class SupabaseStore:
                     text=row["content"],
                     source=f"{sender} · {when}" if when else str(sender),
                 ),
-                float(row.get("rank") or 0),
+                float(row.get(score_key) or 0),
             ))
         return hits
+
+    def retrieve(self, query: str, person_id: str, k: int = 6) -> list[Hit]:
+        """Semantic (pgvector) retrieval when embeddings are enabled, else FTS.
+        person_id: 'self' (owner corpus, person_id NULL) or a person uuid."""
+        import os
+
+        p_person = None if person_id == "self" else person_id
+
+        if os.environ.get("NEVERDIE_EMBED_PROVIDER"):
+            from . import embeddings
+
+            q_emb = embeddings.to_pgvector(embeddings.embed_query(query))
+            r = httpx.post(
+                f"{self.base}/rpc/search_memory_vec",
+                headers=self.headers,
+                json={"q": q_emb, "p_person": p_person, "k": k},
+                timeout=30,
+            )
+            r.raise_for_status()
+            rows = r.json()
+            if rows:  # fall through to FTS only if nothing is embedded yet
+                return self._rows_to_hits(rows, person_id, "score")
+
+        r = httpx.post(
+            f"{self.base}/rpc/search_memory",
+            headers=self.headers,
+            json={"q": query, "p_person": p_person, "k": k},
+            timeout=15,
+        )
+        r.raise_for_status()
+        return self._rows_to_hits(r.json(), person_id, "rank")
+
+    # ── embedding backfill ─────────────────────────────────────────────
+
+    def chunks_without_embedding(self, person_id: str | None, lim: int) -> list[dict]:
+        p_person = None if (person_id in (None, "self")) else person_id
+        r = httpx.post(
+            f"{self.base}/rpc/chunks_without_embedding",
+            headers=self.headers,
+            json={"p_person": p_person, "lim": lim},
+            timeout=60,
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def set_embeddings(self, items: list[dict]) -> int:
+        r = httpx.post(
+            f"{self.base}/rpc/set_embeddings",
+            headers=self.headers,
+            json={"items": items},
+            timeout=120,
+        )
+        r.raise_for_status()
+        return r.json()
 
     def list_personas(self) -> dict[str, dict]:
         """Personas + latest card + person info, keyed by persona id."""

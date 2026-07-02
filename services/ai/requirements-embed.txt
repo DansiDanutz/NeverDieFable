@@ -1,0 +1,3 @@
+# Embedding worker deps (separate from the API — heavy). Install on the GPU/worker box.
+sentence-transformers>=5.0
+# torch is pulled in by sentence-transformers; install a CUDA build on GPU hosts.

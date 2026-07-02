@@ -12,10 +12,11 @@ These are the exact migrations applied to the live Supabase project
 | 5 | `0005_expose_schema.sql` | Grants for `authenticated`/`service_role`, exposes `neverdie` to PostgREST (`anon` gets usage only; RLS guards every row) |
 | 6 | `0006_fts_search.sql` | Full-text search: `search_tsv` + GIN index + trigger on `memory_chunk`, and the `search_memory(q, person, k)` RPC the backend uses until embeddings land |
 | 7 | `0007_vault_storage.sql` | Private `neverdie-vault` storage bucket, `default_owner()` helper (security definer), function grants |
+| 8 | `0008_embedding_functions.sql` | Semantic memory: `chunks_without_embedding`, `set_embeddings`, and `search_memory_vec` (pgvector cosine) — powers the embedding backfill and vector retrieval |
 
 `db/schema.sql` is the human-readable, schema-qualified reference for the same
 model. Apply migrations in order; all are idempotent where practical.
-All five are **applied to the live project** as of 2026-07-02.
+All eight are **applied to the live project** as of 2026-07-02.
 
 **Existing data:** the project already had an `nd_avatars`/`nd_memories`
 avatar model and 94k rows of `chat_history` from earlier work. Those tables are
