@@ -240,6 +240,20 @@ class SupabaseStore:
         r.raise_for_status()
         return r.json()
 
+    def get_vault_item(self, item_id: str) -> dict | None:
+        r = httpx.get(f"{self.base}/vault_item", headers=self.headers,
+                      params={"id": f"eq.{item_id}", "select": "*", "limit": "1"}, timeout=15)
+        r.raise_for_status()
+        rows = r.json()
+        return rows[0] if rows else None
+
+    def download_blob(self, blob_key: str) -> bytes:
+        storage = self.base.replace("/rest/v1", "/storage/v1")
+        r = httpx.get(f"{storage}/object/neverdie-vault/{blob_key}",
+                      headers=self.headers, timeout=60)
+        r.raise_for_status()
+        return r.content
+
     def signed_upload_url(self, blob_key: str) -> str:
         """One-time signed URL the client PUTs the (encrypted) blob to."""
         storage = self.base.replace("/rest/v1", "/storage/v1")

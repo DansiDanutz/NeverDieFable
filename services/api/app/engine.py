@@ -84,6 +84,30 @@ def ask(query: str, person_id: str = "self"):
     return memory_engine.answer(query, STORE, person_id=person_id)
 
 
+def ingest_uploaded(item_id: str, persona_id: str | None = None) -> dict:
+    """A newly-uploaded vault item becomes embedded memory of the right person.
+    persona_id tags a photo/voice of a departed loved one to THEIR corpus."""
+    if not LIVE:
+        return {"status": "demo"}
+    from ai import ingest
+
+    item = STORE.get_vault_item(item_id)
+    if not item:
+        return {"status": "not_found"}
+    person = None
+    if persona_id:
+        p = personas().get(persona_id)
+        person = p["person_id"] if p else None
+    blob = None
+    if item.get("blob_key"):
+        try:
+            blob = STORE.download_blob(item["blob_key"])
+        except Exception:
+            blob = None
+    ids = ingest.ingest_item(STORE, item, blob, person)
+    return {"status": "ingested", "memories_added": len(ids)}
+
+
 def completeness(persona_id: str) -> dict:
     """Memory Completeness score that drives the daily habit loop."""
     if not LIVE:

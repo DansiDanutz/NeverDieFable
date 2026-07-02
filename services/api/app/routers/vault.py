@@ -40,13 +40,15 @@ async def create_item(item: VaultItemCreate) -> dict:
 
 
 @router.post("/items/{item_id}/uploaded")
-async def mark_uploaded(item_id: UUID) -> dict:
-    """Client signals the blob is in storage → item becomes visible and the
-    ingest job (transcribe / OCR / faces / embed / graph-link) is queued."""
-    if engine.LIVE:
-        engine.STORE.update_vault_item(str(item_id), {"status": "processing"})
-    # TODO: queue.enqueue("ingest", item_id)
-    return {"id": str(item_id), "status": "processing"}
+async def mark_uploaded(item_id: UUID, persona_id: str | None = None) -> dict:
+    """Client signals the blob is in storage → ingest turns it into embedded
+    memory. Pass persona_id to tag a photo/voice of a departed loved one to
+    their corpus (grows their garden)."""
+    if not engine.LIVE:
+        return {"id": str(item_id), "status": "processing"}
+    engine.STORE.update_vault_item(str(item_id), {"status": "processing"})
+    result = engine.ingest_uploaded(str(item_id), persona_id=persona_id)
+    return {"id": str(item_id), **result}
 
 
 @router.get("/items")
