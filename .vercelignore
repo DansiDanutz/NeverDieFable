@@ -1,0 +1,6 @@
+# Deploy ONLY the static design preview. Exclude everything else —
+# no .env, no service keys, no backend/app source, no personal data.
+/*
+!web
+!web/**
+!vercel.json
