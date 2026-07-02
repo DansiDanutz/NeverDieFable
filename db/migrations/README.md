@@ -14,6 +14,7 @@ These are the exact migrations applied to the live Supabase project
 | 7 | `0007_vault_storage.sql` | Private `neverdie-vault` storage bucket, `default_owner()` helper (security definer), function grants |
 | 8 | `0008_embedding_functions.sql` | Semantic memory: `chunks_without_embedding`, `set_embeddings`, and `search_memory_vec` (pgvector cosine) — powers the embedding backfill and vector retrieval |
 | 9 | `0009_growth_and_companion.sql` | Memory growth (`add_memory`, `corpus_stats`) + daily companion queue (`companion_add/today/answered`) — the loop that grows the brain every day |
+| 10 | `0010_legacy_protocol.sql` | The Legacy Protocol state machine: check-in, verifier quorum, inheritance rules, unseal — 'if I die, everything remains' |
 
 `db/schema.sql` is the human-readable, schema-qualified reference for the same
 model. Apply migrations in order; all are idempotent where practical.

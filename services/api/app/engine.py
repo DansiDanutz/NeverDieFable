@@ -84,6 +84,50 @@ def ask(query: str, person_id: str = "self"):
     return memory_engine.answer(query, STORE, person_id=person_id)
 
 
+def legacy_state() -> dict:
+    if not LIVE:
+        return {"stage": "active", "checkin_days": 30, "quorum": 2, "grace_days": 14,
+                "verifiers": 0, "confirmations": 0, "rules": 0}
+    return STORE.legacy_get()
+
+
+def legacy_checkin() -> str:
+    return STORE.legacy_checkin() if LIVE else "active"
+
+
+def legacy_config(checkin_days: int, quorum: int, grace_days: int) -> dict:
+    if LIVE:
+        STORE.legacy_set_config(checkin_days, quorum, grace_days)
+    return legacy_state()
+
+
+def add_verifier(person_id: str, contact: str) -> dict:
+    if LIVE:
+        STORE.verifier_add(person_id, contact)
+    return {"status": "added"}
+
+
+def confirm_death(person_id: str, coercion: bool = False) -> dict:
+    return STORE.verifier_confirm(person_id, coercion) if LIVE else {"status": "demo"}
+
+
+def add_legacy_rule(heir_person: str, trigger: str, delivery: str,
+                    note: str | None = None, item_id: str | None = None,
+                    collection: dict | None = None) -> dict:
+    if not LIVE:
+        return {"status": "demo"}
+    rid = STORE.legacy_rule_add(heir_person, trigger, delivery, note, item_id, collection)
+    return {"id": rid}
+
+
+def legacy_rules() -> list[dict]:
+    return STORE.legacy_rules_list() if LIVE else []
+
+
+def unseal() -> dict:
+    return STORE.legacy_unseal() if LIVE else {"status": "demo"}
+
+
 def ingest_uploaded(item_id: str, persona_id: str | None = None) -> dict:
     """A newly-uploaded vault item becomes embedded memory of the right person.
     persona_id tags a photo/voice of a departed loved one to THEIR corpus."""

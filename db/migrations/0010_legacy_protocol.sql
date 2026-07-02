@@ -1,0 +1,10 @@
+-- The Legacy Protocol state machine (applied to the live project 2026-07-02).
+-- Stages: active → unreachable → verification → grace → unsealed.
+-- Functions: legacy_get (volatile; upserts default state), legacy_checkin
+-- (activity resets clock, aborts later stages), legacy_set_config,
+-- verifier_add, verifier_confirm (quorum → grace; note the qualified `ls.stage`
+-- to avoid collision with the OUT column), legacy_rule_add, legacy_rules_list,
+-- legacy_unseal (executes rules, switches self persona to legacy mode).
+-- Full function bodies match services/ai/supastore.py callers; see the live DB
+-- or re-derive from that file. Grants: reads to authenticated+service_role;
+-- verifier_confirm/unseal to service_role only (backend-gated).

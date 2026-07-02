@@ -159,6 +159,49 @@ class SupabaseStore:
         )
         r.raise_for_status()
 
+    # ── legacy protocol ────────────────────────────────────────────────
+
+    def _rpc(self, fn: str, args: dict):
+        r = httpx.post(f"{self.base}/rpc/{fn}", headers=self.headers, json=args, timeout=15)
+        r.raise_for_status()
+        if r.status_code == 204 or not r.content:
+            return None
+        return r.json()
+
+    def legacy_get(self) -> dict:
+        rows = self._rpc("legacy_get", {"p_user": self.default_owner_cached()})
+        return rows[0] if rows else {}
+
+    def legacy_checkin(self) -> str:
+        return self._rpc("legacy_checkin", {"p_user": self.default_owner_cached()})
+
+    def legacy_set_config(self, checkin_days: int, quorum: int, grace_days: int) -> None:
+        self._rpc("legacy_set_config", {"p_user": self.default_owner_cached(),
+                                        "p_checkin": checkin_days, "p_quorum": quorum, "p_grace": grace_days})
+
+    def verifier_add(self, person_id: str, contact: str) -> None:
+        self._rpc("verifier_add", {"p_user": self.default_owner_cached(),
+                                   "p_person": person_id, "p_contact": contact})
+
+    def verifier_confirm(self, person_id: str, coercion: bool = False) -> dict:
+        rows = self._rpc("verifier_confirm", {"p_user": self.default_owner_cached(),
+                                              "p_person": person_id, "p_coercion": coercion})
+        return rows[0] if rows else {}
+
+    def legacy_rule_add(self, heir_person: str, trigger: str, delivery: str,
+                        note: str | None = None, item_id: str | None = None,
+                        collection: dict | None = None) -> str:
+        return self._rpc("legacy_rule_add", {
+            "p_user": self.default_owner_cached(), "p_item": item_id, "p_collection": collection,
+            "p_heir": heir_person, "p_trigger": trigger, "p_delivery": delivery, "p_note": note})
+
+    def legacy_rules_list(self) -> list[dict]:
+        return self._rpc("legacy_rules_list", {"p_user": self.default_owner_cached()})
+
+    def legacy_unseal(self) -> dict:
+        rows = self._rpc("legacy_unseal", {"p_user": self.default_owner_cached()})
+        return rows[0] if rows else {}
+
     def list_personas(self) -> dict[str, dict]:
         """Personas + latest card + person info, keyed by persona id."""
         r = httpx.get(

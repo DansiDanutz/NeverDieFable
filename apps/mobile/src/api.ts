@@ -93,6 +93,31 @@ export const api = {
     ),
 
   legacyCheckin: () => req<{ stage: string }>('/legacy/checkin', { method: 'POST' }),
+
+  legacyState: () =>
+    req<LegacyState>('/legacy/state'),
+
+  legacyRules: () =>
+    req<{ rules: LegacyRule[] }>('/legacy/rules'),
+};
+
+export type LegacyState = {
+  stage: 'active' | 'unreachable' | 'verification' | 'grace' | 'unsealed';
+  checkin_days: number;
+  quorum: number;
+  grace_days: number;
+  verifiers: number;
+  confirmations: number;
+  rules: number;
+};
+
+export type LegacyRule = {
+  id: string;
+  heir_name: string | null;
+  trigger: string;
+  delivery: 'raw' | 'by_avatar' | 'time_capsule';
+  note: string | null;
+  executed_at: string | null;
 };
 
 export type CompanionQuestion = {
