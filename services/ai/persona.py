@@ -43,7 +43,8 @@ class Turn:
     cited: list[str]  # human-facing source labels
 
 
-def _system_prompt(name: str, kind: str, memories: list[Hit], mode: str) -> str:
+def _system_prompt(name: str, kind: str, memories: list[Hit], mode: str,
+                   card: dict | None = None) -> str:
     if mode == "memorial_locked":
         return (
             f"{_GUARDRAILS} This garden for {name} is memorial-locked by the "
@@ -53,9 +54,22 @@ def _system_prompt(name: str, kind: str, memories: list[Hit], mode: str) -> str:
         f"You are the digital memory of {name}." if kind == "departed"
         else "You are this person's own Digital Mind — their mirror."
     )
+    style = ""
+    if card:
+        parts = []
+        if card.get("bio"):
+            parts.append(f"Biography: {card['bio']}")
+        if card.get("personality_traits"):
+            parts.append(f"Personality: {', '.join(map(str, card['personality_traits']))}")
+        if card.get("speaking_style"):
+            parts.append(f"Speaking style: {card['speaking_style']}")
+        if card.get("system_prompt"):
+            parts.append(f"Character notes: {card['system_prompt']}")
+        if parts:
+            style = "\nWho you are:\n" + "\n".join(parts) + "\n"
     mem = "\n".join(f"- {h.memory.text} (source: {h.memory.source})" for h in memories) or "- (no specific memories retrieved)"
     return (
-        f"{who}\n{_GUARDRAILS}\n\n"
+        f"{who}\n{_GUARDRAILS}\n{style}\n"
         f"Speak in {name}'s voice and character, warmly and specifically.\n"
         f"Relevant memories you may draw on:\n{mem}"
     )
@@ -63,10 +77,13 @@ def _system_prompt(name: str, kind: str, memories: list[Hit], mode: str) -> str:
 
 def converse(name: str, kind: str, mode: str, listener_message: str,
              history: list[dict[str, str]], store: InMemoryStore,
-             person_id: str) -> Turn:
-    """One in-character, memory-grounded, guardrailed turn."""
+             person_id: str, card: dict | None = None) -> Turn:
+    """One in-character, memory-grounded, guardrailed turn.
+
+    `store` is anything with a retrieve(query, person_id, k) -> list[Hit]
+    (InMemoryStore for demo, SupabaseStore for live)."""
     hits = store.retrieve(listener_message, person_id=person_id)
-    system = _system_prompt(name, kind, hits, mode)
+    system = _system_prompt(name, kind, hits, mode, card)
     messages = [*history, {"role": "user", "content": listener_message}]
     text = llm.complete(system, messages, tier="fast")
     return Turn(text=text, cited=[h.memory.source for h in hits])
