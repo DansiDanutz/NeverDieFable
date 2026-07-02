@@ -25,7 +25,17 @@ export default function PersonaChat() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState<string | null>(null);
   const scroll = useRef<ScrollView>(null);
+
+  const invite = async () => {
+    try {
+      const r = await api.circleInvite(String(id));
+      setInviteMsg(`✓ Share this code: ${r.token}`);
+    } catch {
+      setInviteMsg('Could not create an invite — try again.');
+    }
+  };
 
   useEffect(() => {
     api
@@ -95,6 +105,11 @@ export default function PersonaChat() {
               : '🕯️ a living memory'
             : 'your digital mind'}
         </Text>
+        {departed && (
+          <Text style={styles.invite} onPress={invite}>
+            {inviteMsg ?? '👪 Invite family to their garden'}
+          </Text>
+        )}
       </View>
 
       <ScrollView ref={scroll} style={styles.flex} contentContainerStyle={{ padding: spacing.m }}>
@@ -130,6 +145,7 @@ export default function PersonaChat() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   stage: { alignItems: 'center', paddingVertical: spacing.l },
+  invite: { color: colors.memory, fontSize: 12.5, marginTop: 10, fontWeight: '600' },
   bubble: { borderRadius: 16, padding: 12, marginBottom: 10, maxWidth: '84%' },
   mine: { backgroundColor: colors.gold, alignSelf: 'flex-end', borderBottomRightRadius: 4 },
   theirs: { backgroundColor: colors.surface, alignSelf: 'flex-start', borderBottomLeftRadius: 4 },

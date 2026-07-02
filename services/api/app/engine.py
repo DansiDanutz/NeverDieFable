@@ -128,6 +128,47 @@ def unseal() -> dict:
     return STORE.legacy_unseal() if LIVE else {"status": "demo"}
 
 
+def circle_invite(persona_id: str, role: str = "contributor") -> dict:
+    """Create a shareable invite so family can join a loved one's garden."""
+    if not LIVE:
+        return {"status": "demo"}
+    c = STORE.circle_for_persona(persona_id)
+    if not c:
+        return {"status": "no_circle"}
+    token = STORE.circle_invite_create(c["circle_id"], role)
+    return {"token": token, "persona": c.get("persona_name"),
+            "join_url": f"neverdie://join/{token}"}
+
+
+def circle_join(token: str, name: str) -> dict:
+    return STORE.circle_join(token, name) if LIVE else {"status": "demo"}
+
+
+def circle_contribute(persona_id: str, contributor: str, text: str, kind: str = "story") -> dict:
+    """A family member's story becomes an embedded memory in the loved one's
+    corpus — the garden grows from everyone who loved them."""
+    if not LIVE:
+        return {"status": "demo"}
+    c = STORE.circle_for_persona(persona_id)
+    if not c:
+        return {"status": "no_circle"}
+    mem = STORE.circle_contribute(c["circle_id"], contributor, text, kind)
+    # embed the new memory so the loved one can recall it right away
+    try:
+        from ai import ingest
+        ingest._embed_new(STORE, c.get("person_id"))
+    except Exception:
+        pass
+    return {"status": "added", "memory_id": mem, "persona": c.get("persona_name")}
+
+
+def circle_members(persona_id: str) -> list[dict]:
+    if not LIVE:
+        return []
+    c = STORE.circle_for_persona(persona_id)
+    return STORE.circle_members(c["circle_id"]) if c else []
+
+
 def ingest_uploaded(item_id: str, persona_id: str | None = None) -> dict:
     """A newly-uploaded vault item becomes embedded memory of the right person.
     persona_id tags a photo/voice of a departed loved one to THEIR corpus."""

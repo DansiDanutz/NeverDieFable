@@ -99,6 +99,22 @@ export const api = {
 
   legacyRules: () =>
     req<{ rules: LegacyRule[] }>('/legacy/rules'),
+
+  circleInvite: (personaId: string) =>
+    req<{ token: string; persona: string; join_url: string }>(
+      `/circle/${personaId}/invite`,
+      { method: 'POST' },
+    ),
+
+  circleMembers: (personaId: string) =>
+    req<{ members: CircleMember[] }>(`/circle/${personaId}/members`),
+};
+
+export type CircleMember = {
+  display_name: string;
+  role: string;
+  contributions: number;
+  joined_at: string;
 };
 
 export type LegacyState = {

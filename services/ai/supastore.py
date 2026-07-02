@@ -208,6 +208,26 @@ class SupabaseStore:
         rows = self._rpc("legacy_unseal", {"p_user": self.default_owner_cached()})
         return rows[0] if rows else {}
 
+    # ── memory circle (family gardens) ─────────────────────────────────
+
+    def circle_for_persona(self, persona_id: str) -> dict:
+        rows = self._rpc("circle_for_persona", {"p_persona": persona_id})
+        return rows[0] if rows else {}
+
+    def circle_invite_create(self, circle_id: str, role: str = "contributor") -> str:
+        return self._rpc("circle_invite_create", {"p_circle": circle_id, "p_role": role})
+
+    def circle_join(self, token: str, name: str) -> dict:
+        rows = self._rpc("circle_join", {"p_token": token, "p_name": name})
+        return rows[0] if rows else {}
+
+    def circle_contribute(self, circle_id: str, contributor: str, text: str, kind: str = "story") -> str:
+        return self._rpc("circle_contribute", {"p_circle": circle_id, "p_contributor": contributor,
+                                               "p_text": text, "p_kind": kind})
+
+    def circle_members(self, circle_id: str) -> list[dict]:
+        return self._rpc("circle_members", {"p_circle": circle_id}) or []
+
     def list_personas(self) -> dict[str, dict]:
         """Personas + latest card + person info, keyed by persona id."""
         r = httpx.get(
