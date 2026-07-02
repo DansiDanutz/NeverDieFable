@@ -15,6 +15,7 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.bg },
         }}
       >
+        <Stack.Screen name="welcome" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="persona/[id]" options={{ title: '' }} />
         <Stack.Screen name="garden/new" options={{ title: 'New Garden', presentation: 'modal' }} />

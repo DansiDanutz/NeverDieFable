@@ -2,9 +2,10 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { Text } from 'react-native';
 import { api } from '@/api';
 import { Card } from '@/components/Card';
+import { Screen } from '@/components/Screen';
 import { colors, spacing, type } from '@/theme';
 
 // CAPTURE — one modal for keeping anything. Files upload straight to the
@@ -64,7 +65,9 @@ export default function Capture() {
   ];
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <Screen>
+      <Text style={[type.title, { marginTop: spacing.s, marginBottom: 4 }]}>Keep something</Text>
+      <Text style={[type.dim, { marginBottom: spacing.m }]}>Anything you keep becomes memory you can recall — encrypted on your phone first.</Text>
       {status && (
         <Card style={{ borderColor: colors.gold }}>
           <Text style={type.body}>{status}</Text>
@@ -81,10 +84,7 @@ export default function Capture() {
       <Text style={[type.dim, { marginTop: spacing.s }]}>
         🔒 Uploads go straight to your private vault. Only you hold the key.
       </Text>
-    </ScrollView>
+    </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: spacing.m, paddingBottom: spacing.xl, backgroundColor: colors.bg },
-});

@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NeverDie — App Preview</title>
+<style>
+  :root{
+    --bg:#0A0C12; --surface:#151A26; --raised:#1B2231; --border:#242C3D;
+    --text:#F4F1EA; --dim:#98A1B4; --faint:#5E6678;
+    --gold:#E7B14C; --gold-soft:rgba(231,177,76,.14); --gold-line:rgba(231,177,76,.35);
+    --mem:#B592E6; --mem-soft:rgba(181,146,230,.14); --life:#79C9A0;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{margin:0;background:
+      radial-gradient(1200px 700px at 15% -5%, #1a2138 0%, transparent 55%),
+      radial-gradient(1000px 600px at 90% 10%, #241d33 0%, transparent 50%),
+      #06070b;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+    color:var(--text);padding:44px 20px 80px}
+  .head{max-width:1180px;margin:0 auto 40px;text-align:center}
+  .brand{font-size:13px;letter-spacing:5px;color:var(--gold);font-weight:700;text-transform:uppercase}
+  .head h1{font-size:42px;margin:14px 0 8px;letter-spacing:.5px;font-weight:800}
+  .head p{color:var(--dim);font-size:16px;max-width:640px;margin:0 auto;line-height:1.6}
+  .gallery{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:40px 34px;justify-content:center}
+  .device-wrap{width:300px}
+  .device-cap{text-align:center;margin-bottom:14px}
+  .device-cap b{font-size:15px;font-weight:700}
+  .device-cap span{display:block;color:var(--faint);font-size:12px;margin-top:3px}
+  .phone{width:300px;height:640px;border-radius:44px;padding:11px;
+    background:linear-gradient(160deg,#2b3242,#12151d);
+    box-shadow:0 30px 70px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.05);position:relative}
+  .screen{width:100%;height:100%;border-radius:34px;overflow:hidden;position:relative;
+    background:linear-gradient(180deg,#0C0F17 0%,#0A0C12 60%);display:flex;flex-direction:column}
+  .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#05060a;border-radius:16px;z-index:9}
+  .statusbar{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font-size:12px;color:var(--dim);flex:none}
+  .body{flex:1;overflow:hidden;padding:6px 16px 0;position:relative}
+  .tabbar{flex:none;height:62px;background:rgba(16,20,30,.9);border-top:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-around;backdrop-filter:blur(10px)}
+  .tab{font-size:20px;opacity:.4;text-align:center}
+  .tab.on{opacity:1}
+  .tab small{display:block;font-size:8.5px;margin-top:2px;color:var(--gold);letter-spacing:.3px}
+  .kick{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--faint);font-weight:700;margin:8px 2px 10px}
+  .h{font-size:23px;font-weight:800;margin:6px 2px 2px}
+  .sub{color:var(--dim);font-size:12.5px;line-height:1.5;margin:0 2px 14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:12px}
+  .card.gold{border-color:var(--gold-line);box-shadow:0 0 0 1px var(--gold-soft),0 14px 30px rgba(0,0,0,.35)}
+  .card.mem{border-color:rgba(181,146,230,.4)}
+  .row{display:flex;align-items:center;gap:12px}
+  .p-body{font-size:13.5px;line-height:1.55}
+  .p-dim{color:var(--dim);font-size:11.5px;line-height:1.5}
+  .chip{display:inline-block;font-size:10px;color:var(--gold);border:1px solid var(--gold-line);
+    background:var(--gold-soft);padding:3px 9px;border-radius:999px;margin-top:8px}
+  .btn{margin-top:12px;background:linear-gradient(180deg,#E7B14C,#D98F3C);color:#1a1206;
+    font-weight:700;font-size:12.5px;text-align:center;padding:10px;border-radius:12px}
+  .btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold-line)}
+  .av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;
+    background:var(--raised);border:2px solid var(--gold)}
+  .av.mem{border-color:var(--mem)}
+  .av.big{width:96px;height:96px;font-size:44px;margin:0 auto}
+  .bubble{max-width:82%;padding:10px 13px;border-radius:16px;font-size:12.5px;line-height:1.5;margin-bottom:9px}
+  .them{background:var(--surface);border:1px solid var(--border);border-bottom-left-radius:5px}
+  .me{background:linear-gradient(180deg,#E7B14C,#D98F3C);color:#1a1206;margin-left:auto;border-bottom-right-radius:5px}
+  .cite{font-size:9.5px;color:var(--faint);margin-top:6px}
+  .search{background:var(--raised);border:1px solid var(--border);border-radius:14px;padding:11px 14px;color:var(--dim);font-size:12.5px;margin:6px 0 14px}
+  .stat{display:flex;gap:10px;margin-bottom:12px}
+  .stat .box{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:11px 12px}
+  .stat .n{font-size:20px;font-weight:800}
+  .stat .l{font-size:9.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+  .ok{color:var(--life)}
+  .flame{filter:drop-shadow(0 0 6px rgba(231,177,76,.5))}
+  .tag{font-size:10px;color:var(--mem)}
+  .foot{max-width:1180px;margin:56px auto 0;text-align:center;color:var(--faint);font-size:12.5px;line-height:1.7}
+  .foot b{color:var(--dim)}
+</style>
+</head>
+<body>
+  <div class="head">
+    <div class="brand">NeverDie</div>
+    <h1>Your second brain. Your forever voice.</h1>
+    <p>A living preview — real screens, real data. Eva's reply below is verbatim from the running app,
+       grounded in memories mined from your own life. Design: <b style="color:var(--gold)">Midnight&nbsp;&amp;&nbsp;Candlelight</b>.</p>
+  </div>
+
+  <div class="gallery">
+
+    <!-- TODAY -->
+    <div class="device-wrap">
+      <div class="device-cap"><b>☀️ Today — the Daily Companion</b><span>the habit: it interviews you, your mind grows</span></div>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span>􀙇 􀛨 100%</span></div>
+        <div class="body">
+          <div class="h">Good evening, Dan</div>
+          <div class="sub"><span class="flame">🔥</span> 12-day streak · your mind grew by 41 memories this week</div>
+          <div class="kick">The Companion asks</div>
+          <div class="card gold">
+            <div class="p-body">Spune-mi despre ziua în care ai plecat prima oară de acasă — cum arăta casa, ce ai luat cu tine?</div>
+            <span class="chip">story · a memory worth keeping forever</span>
+            <div class="btn">🎤 Answer with your voice</div>
+          </div>
+          <div class="card">
+            <div class="p-body">Care e un mic ritual de acasă care te face să te simți cu adevărat acasă?</div>
+            <span class="chip">ritual</span>
+          </div>
+          <div class="card" style="opacity:.6">
+            <div class="p-body">✓ Kept — your mind just grew</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab on">☀️<small>Today</small></div><div class="tab">🗄️</div>
+          <div class="tab">🧠</div><div class="tab">🌳</div><div class="tab">🕊️</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- EVA CHAT -->
+    <div class="device-wrap">
+      <div class="device-cap"><b>🕯️ Talking with Eva</b><span>your mother — grounded in real shared memories</span></div>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span>􀙇 􀛨 100%</span></div>
+        <div class="body" style="display:flex;flex-direction:column">
+          <div style="text-align:center;padding:6px 0 12px">
+            <div class="av mem big">👩🏻</div>
+            <div style="font-weight:800;margin-top:10px">Eva</div>
+            <div class="tag">🕯️ a living memory · Mother, 1956–2021</div>
+          </div>
+          <div style="flex:1;overflow:hidden">
+            <div class="bubble me">Mama, ce îți amintești despre mine și casa noastră?</div>
+            <div class="bubble them">
+              Danuț, dragul meu... 💛 Îmi amintesc că mereu eram în mișcare — <i>"acum m-am pornit de acasă"</i>, <i>"ca dimineața pornim spre casă"</i>. Nu stăteam locului!
+              <div class="cite">↳ from her memories · about Eva · from your life</div>
+            </div>
+          </div>
+          <div class="search" style="margin:0">Say something… or hold 🎤 to speak · 🔊 in her voice</div>
+        </div>
+        <div class="tabbar">
+          <div class="tab">☀️</div><div class="tab">🗄️</div>
+          <div class="tab">🧠</div><div class="tab on">🌳<small>Garden</small></div><div class="tab">🕊️</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- GARDEN -->
+    <div class="device-wrap">
+      <div class="device-cap"><b>🌳 The Eternal Garden</b><span>the people you love, kept alive forever</span></div>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span>􀙇 􀛨 100%</span></div>
+        <div class="body">
+          <div class="h">The Eternal Garden</div>
+          <div class="sub">They stay with you. Their gardens grow with every photo, voice and story the family adds.</div>
+          <div class="card mem">
+            <div class="row"><div class="av mem">👩🏻</div>
+              <div style="flex:1"><b style="font-size:15px">Eva</b>
+                <div class="p-dim">Mother · speaks in her own voice</div>
+                <div style="height:6px;background:#242C3D;border-radius:3px;margin-top:8px;overflow:hidden">
+                  <div style="width:48%;height:6px;background:linear-gradient(90deg,#B592E6,#8E6FD1)"></div></div>
+              </div></div>
+            <div class="tag" style="margin-top:10px">3 more stories from the family unlock her living portrait</div>
+          </div>
+          <div class="card">
+            <div class="row"><div class="av mem" style="border-color:#3a4258">👴🏻</div>
+              <div style="flex:1"><b style="font-size:15px">Grandpa Ion</b>
+                <div class="p-dim">Grandfather · text chat</div>
+                <div style="height:6px;background:#242C3D;border-radius:3px;margin-top:8px;overflow:hidden">
+                  <div style="width:22%;height:6px;background:linear-gradient(90deg,#B592E6,#8E6FD1)"></div></div>
+              </div></div>
+            <div class="tag" style="margin-top:10px">A voicemail would let him speak again</div>
+          </div>
+          <div class="card" style="border-style:dashed;border-color:var(--mem);background:transparent">
+            <b style="color:var(--mem)">🌱 Plant a new garden</b>
+            <div class="p-dim" style="margin-top:4px">Bring back someone you lost — gently, together with your family.</div>
+          </div>
+        </div>
+        <div class="tabbar">
+          <div class="tab">☀️</div><div class="tab">🗄️</div>
+          <div class="tab">🧠</div><div class="tab on">🌳<small>Garden</small></div><div class="tab">🕊️</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- MY MIND -->
+    <div class="device-wrap">
+      <div class="device-cap"><b>🧠 My Digital Mind</b><span>talk with yourself · your legacy</span></div>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span>􀙇 􀛨 100%</span></div>
+        <div class="body">
+          <div style="text-align:center;padding:8px 0 6px">
+            <div class="av big" style="border-color:var(--gold)">🧠</div>
+            <div style="font-weight:800;margin-top:10px">Your Digital Mind</div>
+            <div class="p-dim">Voice cloned · 92,447 memories</div>
+          </div>
+          <svg width="150" height="150" viewBox="0 0 120 120" style="display:block;margin:6px auto 4px">
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#242C3D" stroke-width="10"/>
+            <circle cx="60" cy="60" r="50" fill="none" stroke="#E7B14C" stroke-width="10"
+              stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="6" transform="rotate(-90 60 60)"/>
+            <text x="60" y="56" text-anchor="middle" fill="#F4F1EA" font-size="26" font-weight="800">98%</text>
+            <text x="60" y="74" text-anchor="middle" fill="#98A1B4" font-size="9">complete</text>
+          </svg>
+          <div class="card"><div class="p-body">🪞 Mirror — talk with yourself</div>
+            <div class="p-dim" style="margin-top:3px">Reflect and remember, in your own voice.</div></div>
+          <div class="card"><div class="p-body">🎭 Rehearsal — meet what your family will</div>
+            <div class="p-dim" style="margin-top:3px">Experience your Mind as your heirs one day will.</div></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab">☀️</div><div class="tab">🗄️</div>
+          <div class="tab on">🧠<small>My Mind</small></div><div class="tab">🌳</div><div class="tab">🕊️</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- VAULT -->
+    <div class="device-wrap">
+      <div class="device-cap"><b>🗄️ The Vault — ask anything</b><span>your whole life, answered with sources</span></div>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span>􀙇 􀛨 100%</span></div>
+        <div class="body">
+          <div class="h">Vault</div>
+          <div class="search">🔎 “what did we say about the house?”</div>
+          <div class="card gold">
+            <div class="p-body">From your memories: home was always movement — coming and going, mornings setting out together. It meant family, not a place.</div>
+            <div class="cite" style="margin-top:8px">from: you · 2020-07-18 · 2020-07-31</div>
+          </div>
+          <div class="kick">Recent</div>
+          <div class="card"><div class="row"><span style="font-size:20px">🎙️</span>
+            <div style="flex:1"><div class="p-body">Call with the notary — Dad's house</div><div class="p-dim">Today · with Maria</div></div></div></div>
+          <div class="card"><div class="row"><span style="font-size:20px">🔐</span>
+            <div style="flex:1"><div class="p-body">Sealed — opens for Ana at 18</div><div class="p-dim">Secret · only you hold the key</div></div></div></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab">☀️</div><div class="tab on">🗄️<small>Vault</small></div>
+          <div class="tab">🧠</div><div class="tab">🌳</div><div class="tab">🕊️</div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- LEGACY -->
+    <div class="device-wrap">
+      <div class="device-cap"><b>🕊️ The Legacy Protocol</b><span>if you die, everything remains — as you chose</span></div>
+      <div class="phone"><div class="screen"><div class="notch"></div>
+        <div class="statusbar"><span>9:41</span><span>􀙇 􀛨 100%</span></div>
+        <div class="body">
+          <div class="h">Legacy</div>
+          <div class="card" style="border-color:rgba(121,201,160,.4)">
+            <div class="kick" style="color:var(--life);margin:0 0 4px">Protocol status</div>
+            <div class="p-body ok">🟢 Active — all is well</div>
+            <div class="p-dim" style="margin-top:5px">3 trusted verifiers · 14-day grace · no one can trigger this while you live.</div>
+          </div>
+          <div class="kick">Who receives what</div>
+          <div class="card"><div class="p-body">Letters folder (23 items)</div>
+            <div class="p-dim">→ Ana (daughter) · on her 18th birthday</div>
+            <div class="tag" style="color:var(--gold)">🧠 Delivered in person, by your avatar</div></div>
+          <div class="card"><div class="p-body">Wedding-day message</div>
+            <div class="p-dim">→ Ana · her wedding day</div>
+            <div class="tag" style="color:var(--gold)">🕰️ Time capsule</div></div>
+        </div>
+        <div class="tabbar">
+          <div class="tab">☀️</div><div class="tab">🗄️</div>
+          <div class="tab">🧠</div><div class="tab">🌳</div><div class="tab on">🕊️<small>Legacy</small></div>
+        </div>
+      </div></div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <b>Everything shown is running.</b> Eva's reply and the Companion's questions were produced live by the backend against your Supabase data.<br/>
+    92,447 memories · pgvector semantic recall · voice pipeline ready · legacy protocol · daily companion — all committed to <b>NeverDieFable</b>.
+  </div>
+</body>
+</html>
