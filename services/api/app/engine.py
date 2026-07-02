@@ -18,6 +18,8 @@ _SERVICES = Path(__file__).resolve().parents[2]
 if str(_SERVICES) not in sys.path:
     sys.path.insert(0, str(_SERVICES))
 
+from ai import companion as companion_engine  # noqa: E402
+from ai import growth  # noqa: E402
 from ai import memory as memory_engine  # noqa: E402
 from ai import persona as persona_engine  # noqa: E402
 from ai.store import InMemoryStore  # noqa: E402
@@ -56,18 +58,70 @@ def personas() -> dict[str, dict]:
     return _persona_cache
 
 
-def chat_turn(persona_id: str, message: str, history: list[dict[str, str]]):
+def chat_turn(persona_id: str, message: str, history: list[dict[str, str]],
+              learn: bool = True):
     reg = personas()
     p = reg.get(persona_id) or reg["self"]
-    return persona_engine.converse(
+    turn = persona_engine.converse(
         name=p["name"], kind=p["kind"], mode=p["mode"],
         listener_message=message, history=history,
         store=STORE, person_id=p["person_id"], card=p.get("card"),
     )
+    # The brain grows: distill this exchange into a durable memory of the
+    # subject, so tomorrow the Mind remembers what was said today.
+    if learn and LIVE:
+        try:
+            mem = growth.distill(message, turn.text)
+            if mem:
+                STORE.add_memory(p["person_id"], mem,
+                                 source=f"conversation · {p['name']}", kind="interaction")
+        except Exception:
+            pass  # never let learning break a reply
+    return turn
 
 
 def ask(query: str, person_id: str = "self"):
     return memory_engine.answer(query, STORE, person_id=person_id)
+
+
+def completeness(person_id: str) -> dict:
+    """Memory Completeness score that drives the daily habit loop."""
+    if not LIVE:
+        return {"total": 0, "embedded": 0, "score": 0.0}
+    s = STORE.corpus_stats(person_id)
+    total = int(s["total"])
+    # a warm, non-shaming curve: meaningful at ~200 memories, rich past ~2000
+    import math
+    score = 0.0 if total == 0 else min(1.0, math.log10(1 + total) / math.log10(2001))
+    return {**s, "score": round(score, 3)}
+
+
+def generate_companion_questions(persona_id: str = "self", n: int = 3) -> list[dict]:
+    """Interview the user (or family) to grow a corpus, queue the questions."""
+    if not LIVE:
+        return []
+    reg = personas()
+    p = reg.get(persona_id) or reg["self"]
+    seed = "life story family love home childhood work"
+    known = [h.memory.text for h in STORE.retrieve(seed, p["person_id"], k=12)]
+    qs = companion_engine.generate(p["name"], p["kind"] == "departed", known, n=n)
+    for q in qs:
+        q["id"] = STORE.companion_add(q["question"], q["gap_kind"], q["priority"],
+                                      gap_ref={"persona_id": persona_id})
+    return qs
+
+
+def companion_today(limit: int = 3) -> list[dict]:
+    return STORE.companion_today(limit) if LIVE else []
+
+
+def answer_companion(question_id: str, text: str, person_id: str = "self") -> dict:
+    """A companion answer becomes durable, embeddable memory of the subject."""
+    if not LIVE:
+        return {"status": "demo"}
+    mem_id = STORE.add_memory(person_id, text, source="companion answer", kind="story")
+    STORE.companion_answered(question_id, mem_id)
+    return {"status": "answered", "memory_id": mem_id}
 
 
 def set_persona_voice(persona_id: str, voice_ref: str) -> None:

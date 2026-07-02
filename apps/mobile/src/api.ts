@@ -78,7 +78,26 @@ export const api = {
     return reg.id;
   },
 
-  companionToday: () => req<{ streak_days: number; questions: unknown[] }>('/companion/today'),
+  companionToday: () =>
+    req<{ questions: CompanionQuestion[] }>('/companion/today'),
+
+  answerCompanion: (questionId: string, text: string, personaId = 'self') =>
+    req<{ status: string; memory_id?: string }>(
+      `/companion/questions/${questionId}/answer?persona_id=${personaId}&text=${encodeURIComponent(text)}`,
+      { method: 'POST' },
+    ),
+
+  completeness: (personaId: string) =>
+    req<{ total: number; embedded: number; score: number }>(
+      `/people/${personaId}/completeness`,
+    ),
 
   legacyCheckin: () => req<{ stage: string }>('/legacy/checkin', { method: 'POST' }),
+};
+
+export type CompanionQuestion = {
+  id: string;
+  question: string;
+  gap_kind: string;
+  priority: number;
 };

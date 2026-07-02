@@ -95,6 +95,70 @@ class SupabaseStore:
         r.raise_for_status()
         return r.json()
 
+    # ── memory growth + companion ──────────────────────────────────────
+
+    def default_owner_cached(self) -> str:
+        if not getattr(self, "_owner", None):
+            self._owner = self.default_owner()
+        return self._owner
+
+    def add_memory(self, person_id: str | None, text: str, source: str,
+                   kind: str = "interaction") -> str:
+        p_person = None if (person_id in (None, "self")) else person_id
+        r = httpx.post(
+            f"{self.base}/rpc/add_memory",
+            headers=self.headers,
+            json={"p_owner": self.default_owner_cached(), "p_person": p_person,
+                  "p_text": text, "p_source": source, "p_kind": kind},
+            timeout=15,
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def corpus_stats(self, person_id: str | None) -> dict:
+        p_person = None if (person_id in (None, "self")) else person_id
+        r = httpx.post(
+            f"{self.base}/rpc/corpus_stats",
+            headers=self.headers,
+            json={"p_owner": self.default_owner_cached(), "p_person": p_person},
+            timeout=15,
+        )
+        r.raise_for_status()
+        row = (r.json() or [{}])[0]
+        return {"total": row.get("total", 0), "embedded": row.get("embedded", 0)}
+
+    def companion_add(self, question: str, gap_kind: str, priority: float,
+                      circle_id: str | None = None, gap_ref: dict | None = None) -> str:
+        r = httpx.post(
+            f"{self.base}/rpc/companion_add",
+            headers=self.headers,
+            json={"p_owner": self.default_owner_cached(), "p_circle": circle_id,
+                  "p_gap_kind": gap_kind, "p_gap": gap_ref or {},
+                  "p_question": question, "p_priority": priority},
+            timeout=15,
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def companion_today(self, limit: int = 3) -> list[dict]:
+        r = httpx.post(
+            f"{self.base}/rpc/companion_today",
+            headers=self.headers,
+            json={"p_owner": self.default_owner_cached(), "p_limit": limit},
+            timeout=15,
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def companion_answered(self, question_id: str, answer_item: str | None) -> None:
+        r = httpx.post(
+            f"{self.base}/rpc/companion_answered",
+            headers=self.headers,
+            json={"p_question": question_id, "p_answer_item": answer_item},
+            timeout=15,
+        )
+        r.raise_for_status()
+
     def list_personas(self) -> dict[str, dict]:
         """Personas + latest card + person info, keyed by persona id."""
         r = httpx.get(

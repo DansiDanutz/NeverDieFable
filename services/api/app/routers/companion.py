@@ -1,33 +1,33 @@
-"""Daily Companion — the proactive agent's question queue."""
+"""Daily Companion — the proactive agent's question queue and the growth loop."""
 
 from uuid import UUID
 
 from fastapi import APIRouter
 
+from app import engine
+
 router = APIRouter()
 
 
 @router.get("/today")
-async def today() -> dict:
-    """Today's ranked questions (max few/day) + streak + housekeeping proposals."""
-    # TODO: select pending companion_question order by priority; compute streak
-    return {
-        "streak_days": 0,
-        "questions": [],
-        "housekeeping": [],
-    }
+async def today(limit: int = 3) -> dict:
+    """Today's ranked questions. If the queue is empty, generate a fresh batch
+    by interviewing against what the Mind already knows."""
+    qs = engine.companion_today(limit)
+    if not qs:
+        qs = engine.generate_companion_questions("self", n=limit)
+    return {"questions": qs}
+
+
+@router.post("/generate")
+async def generate(persona_id: str = "self", n: int = 3) -> dict:
+    """Generate interview questions for a persona (self or a departed loved one)
+    to grow their corpus — the engine of the daily habit."""
+    return {"questions": engine.generate_companion_questions(persona_id, n=n)}
 
 
 @router.post("/questions/{question_id}/answer")
-async def answer(question_id: UUID, text: str | None = None,
-                 audio_item_id: UUID | None = None) -> dict:
-    """An answer becomes a 'story' vault item: transcribed, embedded, linked to
-    the gap that produced the question. Voice answers also feed voice-print training."""
-    # TODO: create story item; resolve gap (tag face, label voice, ...); mark answered
-    return {"question_id": str(question_id), "status": "answered"}
-
-
-@router.post("/questions/{question_id}/skip")
-async def skip(question_id: UUID, snooze_days: int = 0) -> dict:
-    # TODO: mark skipped/snoozed; grief-aware rate limiting for departed-person topics
-    return {"question_id": str(question_id), "status": "snoozed" if snooze_days else "skipped"}
+async def answer(question_id: UUID, text: str, persona_id: str = "self") -> dict:
+    """An answer becomes durable memory of the subject — transcribed voice or
+    typed — then gets embedded so it's recallable tomorrow."""
+    return engine.answer_companion(str(question_id), text, person_id=persona_id)

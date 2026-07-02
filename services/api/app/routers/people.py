@@ -20,17 +20,19 @@ async def list_people(departed: bool | None = None) -> dict:
     return {"people": []}
 
 
-@router.get("/{person_id}/completeness")
-async def memory_completeness(person_id: UUID) -> dict:
-    """Memory Completeness score: how much material exists for this person and
-    what would unlock the next persona quality tier (voice, avatar, stories)."""
-    # TODO: compute from item_person + memory_chunk counts and modality coverage
+@router.get("/{persona_id}/completeness")
+async def memory_completeness(persona_id: str) -> dict:
+    """Live Memory Completeness score from the real corpus — the number that
+    drives the daily habit loop ('3 more stories unlock her voice')."""
+    from app import engine
+
+    stats = engine.completeness(persona_id)
     return {
-        "person_id": str(person_id),
-        "score": 0.0,
+        "persona_id": persona_id,
+        **stats,
         "unlocks": [
             {"tier": "voice", "needs": "60+ seconds of clean audio"},
             {"tier": "avatar", "needs": "1 clear frontal photo"},
-            {"tier": "stories", "needs": "10 answered circle questions"},
+            {"tier": "richer recall", "needs": "keep answering the daily questions"},
         ],
     }
