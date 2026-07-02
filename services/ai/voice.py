@@ -41,3 +41,25 @@ def synthesize(text: str, voice: VoicePrint, *, streaming: bool = True) -> bytes
     Quality path (time capsules, memorial films): Fish Speech full render.
     """
     raise NotImplementedError("wire to Chatterbox/Fish Speech worker")
+
+
+def synthesize_elevenlabs(text: str, voice_id: str) -> bytes:
+    """Premium/commercial fallback via ElevenLabs (ELEVENLABS_API_KEY).
+
+    Useful today for rare languages and while the self-hosted GPU pipeline is
+    stood up. ElevenLabs also offers instant voice cloning from a short sample,
+    which is the fastest path to a first speaking persona.
+    """
+    import os
+
+    import httpx
+
+    key = os.environ["ELEVENLABS_API_KEY"]
+    r = httpx.post(
+        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}",
+        headers={"xi-api-key": key, "accept": "audio/mpeg"},
+        json={"text": text, "model_id": "eleven_multilingual_v2"},
+        timeout=60,
+    )
+    r.raise_for_status()
+    return r.content

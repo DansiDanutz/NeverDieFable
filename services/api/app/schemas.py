@@ -79,6 +79,7 @@ class ChatResponse(BaseModel):
     audio_ref: str | None = None
     video_ref: str | None = None
     cited_items: list[UUID] = []
+    citations: list[str] = []  # human-facing source labels
 
 
 class AskRequest(BaseModel):

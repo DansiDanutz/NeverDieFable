@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter
 
+from app import engine
 from app.schemas import AskRequest, AskResponse, VaultItemCreate
 
 router = APIRouter()
@@ -41,5 +42,5 @@ async def list_items(kind: str | None = None, person_id: UUID | None = None,
 async def ask(req: AskRequest) -> AskResponse:
     """Ask Anything: hybrid retrieval over the user's memory chunks,
     answer with citations. See services/ai/memory.py."""
-    # TODO: memory.answer(user_id, req.query)
-    return AskResponse(answer="(memory engine not yet wired)", citations=[])
+    text, sources = engine.ask(req.query)
+    return AskResponse(answer=text, citations=[{"source": s} for s in sources])

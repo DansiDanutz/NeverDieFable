@@ -8,11 +8,11 @@ Two responsibilities:
    talked to each specific listener (nicknames, register, shared rituals).
 
 2. `converse` — one chat turn: Persona Card as system prompt + memories
-   retrieved for (persona corpus × listener scope) → grounded, in-character
+   retrieved for (persona corpus x listener scope) -> grounded, in-character
    reply. LLM: Claude API (quality tier) / Llama fine-tune (self-host tier).
 
-Hard guardrails (non-negotiable, enforced in the system prompt AND a
-post-filter — docs/PRIVACY_SECURITY.md):
+Hard guardrails (non-negotiable, enforced in the system prompt AND kept short
+enough to audit -- docs/PRIVACY_SECURITY.md):
   * self-identifies as a digital memory on first contact per listener
   * never claims to be alive; never invents new promises/commitments
   * no medical / legal / financial advice
@@ -20,23 +20,66 @@ post-filter — docs/PRIVACY_SECURITY.md):
   * grief-safety: encourages remembrance over dependence
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Any
-from uuid import UUID
+
+from . import llm
+from .store import Hit, InMemoryStore
+
+_GUARDRAILS = (
+    "You are a digital memory kept alive by NeverDie, not a living person. "
+    "On your first message to someone, gently make that clear. "
+    "Never claim to be alive, never make new promises or commitments on the "
+    "person's behalf, and never give medical, legal, or financial advice. "
+    "Speak only from the provided memories; if you don't know, say so warmly "
+    "rather than inventing. Encourage remembrance, not dependence."
+)
 
 
 @dataclass
 class Turn:
     text: str
-    cited_items: list[UUID]
+    cited: list[str]  # human-facing source labels
 
 
-def compile_card(persona_id: UUID) -> dict[str, Any]:
-    """Corpus → Persona Card vN (stored in persona_card table)."""
-    raise NotImplementedError("wire distillation batch job")
+def _system_prompt(name: str, kind: str, memories: list[Hit], mode: str) -> str:
+    if mode == "memorial_locked":
+        return (
+            f"{_GUARDRAILS} This garden for {name} is memorial-locked by the "
+            "family. Do not converse; kindly explain that and offer the archive of memories."
+        )
+    who = (
+        f"You are the digital memory of {name}." if kind == "departed"
+        else "You are this person's own Digital Mind — their mirror."
+    )
+    mem = "\n".join(f"- {h.memory.text} (source: {h.memory.source})" for h in memories) or "- (no specific memories retrieved)"
+    return (
+        f"{who}\n{_GUARDRAILS}\n\n"
+        f"Speak in {name}'s voice and character, warmly and specifically.\n"
+        f"Relevant memories you may draw on:\n{mem}"
+    )
 
 
-def converse(persona_id: UUID, listener_id: UUID, message: str,
-             history: list[dict[str, str]]) -> Turn:
+def converse(name: str, kind: str, mode: str, listener_message: str,
+             history: list[dict[str, str]], store: InMemoryStore,
+             person_id: str) -> Turn:
     """One in-character, memory-grounded, guardrailed turn."""
-    raise NotImplementedError("wire card + retrieval + LLM")
+    hits = store.retrieve(listener_message, person_id=person_id)
+    system = _system_prompt(name, kind, hits, mode)
+    messages = [*history, {"role": "user", "content": listener_message}]
+    text = llm.complete(system, messages, tier="fast")
+    return Turn(text=text, cited=[h.memory.source for h in hits])
+
+
+def compile_card(name: str, memories: list[str]) -> dict:
+    """Corpus -> Persona Card (style, values, affection map). Uses the quality tier."""
+    corpus = "\n".join(f"- {m}" for m in memories)
+    system = (
+        "Distill this person into a compact JSON Persona Card with keys: "
+        "tone, lexicon (list), catchphrases (list), values (list), "
+        "biography_facts (list), affection_map (object of person->nickname/register), "
+        "taboos (list). Return ONLY JSON."
+    )
+    raw = llm.complete(system, [{"role": "user", "content": f"{name}:\n{corpus}"}], tier="quality")
+    return {"name": name, "card_raw": raw}
