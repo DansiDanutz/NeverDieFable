@@ -84,11 +84,13 @@ def ask(query: str, person_id: str = "self"):
     return memory_engine.answer(query, STORE, person_id=person_id)
 
 
-def completeness(person_id: str) -> dict:
+def completeness(persona_id: str) -> dict:
     """Memory Completeness score that drives the daily habit loop."""
     if not LIVE:
         return {"total": 0, "embedded": 0, "score": 0.0}
-    s = STORE.corpus_stats(person_id)
+    p = personas().get(persona_id)
+    corpus = p["person_id"] if p else persona_id
+    s = STORE.corpus_stats(corpus)
     total = int(s["total"])
     # a warm, non-shaming curve: meaningful at ~200 memories, rich past ~2000
     import math
@@ -122,6 +124,38 @@ def answer_companion(question_id: str, text: str, person_id: str = "self") -> di
     mem_id = STORE.add_memory(person_id, text, source="companion answer", kind="story")
     STORE.companion_answered(question_id, mem_id)
     return {"status": "answered", "memory_id": mem_id}
+
+
+def seed_departed_corpus(persona_id: str, per_seed: int = 12) -> dict:
+    """Bring a departed loved one to life from what you already wrote about them.
+
+    Semantically mines YOUR self corpus for memories that mention this person
+    (by name, relationship, and endearments), and copies the closest matches into
+    THEIR corpus — so they can immediately recall your actual shared moments.
+    Requires embeddings; run the embed job first for best coverage."""
+    if not LIVE:
+        return {"status": "demo"}
+    reg = personas()
+    p = reg.get(persona_id)
+    if not p or p["kind"] != "departed":
+        return {"status": "skipped", "reason": "not a departed persona"}
+
+    name = p["name"]
+    rel = (p.get("relationship") or "").lower()
+    seeds = [name, rel, f"{name} {rel}", "mama mother mom", "my mother",
+             "memories of her", "her voice her smile", "family home childhood"]
+    seen: set[str] = set()
+    copied = 0
+    for seed in seeds:
+        for h in STORE.retrieve(seed, "self", k=per_seed):
+            key = h.memory.text.strip()
+            if len(key) < 8 or key in seen:
+                continue
+            seen.add(key)
+            STORE.add_memory(p["person_id"], key,
+                             source=f"about {name} · from your memories", kind="shared_memory")
+            copied += 1
+    return {"status": "seeded", "persona": name, "memories_added": copied}
 
 
 def set_persona_voice(persona_id: str, voice_ref: str) -> None:

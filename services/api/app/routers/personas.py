@@ -70,6 +70,14 @@ async def build_avatar(persona_id: UUID) -> dict:
     return {"persona_id": str(persona_id), "job": "avatar_rig", "status": "queued"}
 
 
+@router.post("/{persona_id}/seed")
+async def seed_from_your_memories(persona_id: str, per_seed: int = 12) -> dict:
+    """Bring a departed loved one to life from what you already wrote about them:
+    semantically mine your own corpus for memories mentioning them and copy the
+    closest into their corpus, so they can recall your real shared moments."""
+    return engine.seed_departed_corpus(persona_id, per_seed=per_seed)
+
+
 @router.post("/{persona_id}/card/recompile")
 async def recompile_card(persona_id: UUID) -> dict:
     """Distill the persona's corpus into a new Persona Card version
