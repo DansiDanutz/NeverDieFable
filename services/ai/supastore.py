@@ -86,3 +86,58 @@ class SupabaseStore:
             timeout=15,
         )
         r.raise_for_status()
+
+    # ── vault ──────────────────────────────────────────────────────────
+
+    def default_owner(self) -> str:
+        r = httpx.post(f"{self.base}/rpc/default_owner", headers=self.headers,
+                       json={}, timeout=15)
+        r.raise_for_status()
+        return r.json()
+
+    def create_vault_item(self, owner_id: str, fields: dict) -> dict:
+        r = httpx.post(
+            f"{self.base}/vault_item",
+            headers={**self.headers, "Prefer": "return=representation"},
+            json={"owner_id": owner_id, **fields},
+            timeout=15,
+        )
+        r.raise_for_status()
+        return r.json()[0]
+
+    def update_vault_item(self, item_id: str, fields: dict) -> None:
+        r = httpx.patch(
+            f"{self.base}/vault_item",
+            headers=self.headers,
+            params={"id": f"eq.{item_id}"},
+            json=fields,
+            timeout=15,
+        )
+        r.raise_for_status()
+
+    def list_vault_items(self, owner_id: str, kind: str | None = None,
+                         limit: int = 50, offset: int = 0) -> list[dict]:
+        params = {
+            "owner_id": f"eq.{owner_id}",
+            "select": "id,kind,title,blob_key,mime_type,byte_size,captured_at,source_app,sensitivity,status,created_at",
+            "order": "created_at.desc",
+            "limit": str(limit),
+            "offset": str(offset),
+        }
+        if kind:
+            params["kind"] = f"eq.{kind}"
+        r = httpx.get(f"{self.base}/vault_item", headers=self.headers,
+                      params=params, timeout=15)
+        r.raise_for_status()
+        return r.json()
+
+    def signed_upload_url(self, blob_key: str) -> str:
+        """One-time signed URL the client PUTs the (encrypted) blob to."""
+        storage = self.base.replace("/rest/v1", "/storage/v1")
+        r = httpx.post(
+            f"{storage}/object/upload/sign/neverdie-vault/{blob_key}",
+            headers=self.headers,
+            timeout=15,
+        )
+        r.raise_for_status()
+        return f"{storage}{r.json()['url']}"

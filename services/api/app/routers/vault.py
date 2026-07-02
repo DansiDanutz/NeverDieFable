@@ -12,35 +12,55 @@ router = APIRouter()
 
 @router.post("/items")
 async def create_item(item: VaultItemCreate) -> dict:
-    """Register a vault item and return a pre-signed upload URL for the
-    client-encrypted blob. Ingest pipeline picks it up after upload completes."""
-    item_id = uuid4()
-    # TODO: insert row (status=pending), presign S3 PUT for blob_key
+    """Register a vault item and return a one-time signed upload URL for the
+    blob (client-encrypted at the Phase-1 crypto rollout). The ingest pipeline
+    picks the item up after upload completes."""
+    if not engine.LIVE:
+        item_id = uuid4()
+        return {"id": str(item_id), "upload_url": None, "blob_key": f"vault/{item_id}",
+                "note": "demo mode — set SUPABASE_URL/SERVICE_KEY for real storage"}
+
+    owner = engine.STORE.default_owner()
+    blob_key = f"{owner}/{uuid4()}"
+    row = engine.STORE.create_vault_item(owner, {
+        "kind": item.kind.value,
+        "title": item.title,
+        "mime_type": item.mime_type,
+        "byte_size": item.byte_size,
+        "captured_at": item.captured_at.isoformat() if item.captured_at else None,
+        "source_app": item.source_app,
+        "sensitivity": item.sensitivity.value,
+        "blob_key": blob_key,
+    })
     return {
-        "id": str(item_id),
-        "upload_url": f"https://storage.example/put/{item_id}",  # placeholder
-        "blob_key": f"vault/{item_id}",
+        "id": row["id"],
+        "blob_key": blob_key,
+        "upload_url": engine.STORE.signed_upload_url(blob_key),
     }
 
 
 @router.post("/items/{item_id}/uploaded")
 async def mark_uploaded(item_id: UUID) -> dict:
-    """Client signals the encrypted blob is in storage → enqueue ingest job
-    (transcribe / diarize / OCR / faces / embed / graph-link)."""
+    """Client signals the blob is in storage → item becomes visible and the
+    ingest job (transcribe / OCR / faces / embed / graph-link) is queued."""
+    if engine.LIVE:
+        engine.STORE.update_vault_item(str(item_id), {"status": "processing"})
     # TODO: queue.enqueue("ingest", item_id)
     return {"id": str(item_id), "status": "processing"}
 
 
 @router.get("/items")
-async def list_items(kind: str | None = None, person_id: UUID | None = None,
-                     limit: int = 50, offset: int = 0) -> dict:
-    # TODO: query with RLS scoping
-    return {"items": [], "total": 0}
+async def list_items(kind: str | None = None, limit: int = 50, offset: int = 0) -> dict:
+    if not engine.LIVE:
+        return {"items": [], "total": 0}
+    owner = engine.STORE.default_owner()
+    items = engine.STORE.list_vault_items(owner, kind=kind, limit=limit, offset=offset)
+    return {"items": items, "total": len(items)}
 
 
 @router.post("/ask", response_model=AskResponse)
 async def ask(req: AskRequest) -> AskResponse:
-    """Ask Anything: hybrid retrieval over the user's memory chunks,
-    answer with citations. See services/ai/memory.py."""
+    """Ask Anything: retrieval over the user's memory chunks, answer with
+    citations. See services/ai/memory.py."""
     text, sources = engine.ask(req.query)
     return AskResponse(answer=text, citations=[{"source": s} for s in sources])
