@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { api, ApiPersona } from '@/api';
+import { Avatar } from '@/components/Avatar';
 import { colors, spacing, type } from '@/theme';
 
 type Msg = { role: 'me' | 'them'; text: string; citations?: string[] };
@@ -86,10 +87,8 @@ export default function PersonaChat() {
       <Stack.Screen options={{ title: persona?.name ?? '…' }} />
 
       <View style={styles.stage}>
-        <View style={[styles.portrait, departed && styles.portraitMemory]}>
-          <Text style={{ fontSize: 44 }}>{departed ? '🕯️' : '🧠'}</Text>
-        </View>
-        <Text style={[type.dim, { marginTop: 8 }]}>
+        <Avatar glyph={departed ? '🕯️' : '🧠'} size={92} departed={departed} glow />
+        <Text style={[type.dim, { marginTop: 10 }]}>
           {departed
             ? persona?.has_voice
               ? '🕯️ a living memory · speaks in their own voice'
@@ -131,17 +130,6 @@ export default function PersonaChat() {
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.bg },
   stage: { alignItems: 'center', paddingVertical: spacing.l },
-  portrait: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.surfaceRaised,
-    borderColor: colors.gold,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  portraitMemory: { borderColor: colors.memory },
   bubble: { borderRadius: 16, padding: 12, marginBottom: 10, maxWidth: '84%' },
   mine: { backgroundColor: colors.gold, alignSelf: 'flex-end', borderBottomRightRadius: 4 },
   theirs: { backgroundColor: colors.surface, alignSelf: 'flex-start', borderBottomLeftRadius: 4 },

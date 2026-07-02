@@ -1,6 +1,7 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Card } from '@/components/Card';
+import { Screen } from '@/components/Screen';
 import { legacyRules } from '@/mock';
 import { colors, spacing, type } from '@/theme';
 
@@ -9,7 +10,7 @@ import { colors, spacing, type } from '@/theme';
 // (docs/LEGACY_PROTOCOL.md)
 export default function LegacyScreen() {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <Screen>
       <Card style={styles.statusCard}>
         <Text style={[type.label, { color: colors.life }]}>Protocol status</Text>
         <Text style={[type.h2, { marginTop: 6 }]}>🟢 Active — all is well</Text>
@@ -52,12 +53,11 @@ export default function LegacyScreen() {
           2 of 3 must confirm, then 14 days of grace, before anything unseals.
         </Text>
       </Card>
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.m, paddingBottom: spacing.xl },
   statusCard: { borderColor: colors.life, backgroundColor: colors.surface },
   how: { color: colors.gold, fontSize: 13, marginTop: 8 },
 });

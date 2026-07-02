@@ -1,15 +1,9 @@
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, CompanionQuestion } from '@/api';
 import { Card } from '@/components/Card';
+import { Screen } from '@/components/Screen';
 import { todaysQuestions } from '@/mock';
 import { colors, spacing, type } from '@/theme';
 
@@ -53,7 +47,7 @@ export default function TodayScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <Screen>
       <Text style={type.title}>Good evening</Text>
       <Text style={[type.dim, { marginTop: 4, marginBottom: spacing.l }]}>
         🔥 Keep your streak — every answer makes your mind, and theirs, more alive.
@@ -109,12 +103,11 @@ export default function TodayScreen() {
           Everything is encrypted on your phone before it goes anywhere.
         </Text>
       </Card>
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.m, paddingBottom: spacing.xl },
   answerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

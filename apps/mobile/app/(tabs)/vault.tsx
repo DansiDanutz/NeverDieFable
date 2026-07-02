@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, ApiVaultItem } from '@/api';
 import { Card } from '@/components/Card';
+import { Screen } from '@/components/Screen';
 import { recentVault } from '@/mock';
 import { colors, spacing, type } from '@/theme';
 
@@ -52,7 +53,7 @@ export default function VaultScreen() {
   }, [query, asking]);
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <Screen>
       <TextInput
         style={styles.search}
         placeholder='Ask anything… “what did we say about the house?”'
@@ -97,12 +98,11 @@ export default function VaultScreen() {
           document you add becomes memory your Mind can answer from.
         </Text>
       )}
-    </ScrollView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.m, paddingBottom: spacing.xl },
   search: {
     backgroundColor: colors.surfaceRaised,
     borderColor: colors.border,
