@@ -79,10 +79,10 @@ export const api = {
   },
 
   companionToday: () =>
-    req<{ questions: CompanionQuestion[] }>('/companion/today'),
+    req<{ streak: number; questions: CompanionQuestion[] }>('/companion/today'),
 
   answerCompanion: (questionId: string, text: string, personaId = 'self') =>
-    req<{ status: string; memory_id?: string }>(
+    req<{ status: string; memory_id?: string; streak?: number }>(
       `/companion/questions/${questionId}/answer?persona_id=${personaId}&text=${encodeURIComponent(text)}`,
       { method: 'POST' },
     ),

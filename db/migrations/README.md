@@ -15,10 +15,11 @@ These are the exact migrations applied to the live Supabase project
 | 8 | `0008_embedding_functions.sql` | Semantic memory: `chunks_without_embedding`, `set_embeddings`, and `search_memory_vec` (pgvector cosine) — powers the embedding backfill and vector retrieval |
 | 9 | `0009_growth_and_companion.sql` | Memory growth (`add_memory`, `corpus_stats`) + daily companion queue (`companion_add/today/answered`) — the loop that grows the brain every day |
 | 10 | `0010_legacy_protocol.sql` | The Legacy Protocol state machine: check-in, verifier quorum, inheritance rules, unseal — 'if I die, everything remains' |
+| 11 | `0011_daily_ritual.sql` | Streak tracking (`companion_activity`, `companion_touch`, `companion_streak`) — the daily habit loop |
 
 `db/schema.sql` is the human-readable, schema-qualified reference for the same
 model. Apply migrations in order; all are idempotent where practical.
-All eight are **applied to the live project** as of 2026-07-02.
+All eleven are **applied to the live project** as of 2026-07-02.
 
 **Existing data:** the project already had an `nd_avatars`/`nd_memories`
 avatar model and 94k rows of `chat_history` from earlier work. Those tables are

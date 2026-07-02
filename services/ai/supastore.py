@@ -150,6 +150,12 @@ class SupabaseStore:
         r.raise_for_status()
         return r.json()
 
+    def companion_touch(self) -> None:
+        self._rpc("companion_touch", {"p_user": self.default_owner_cached()})
+
+    def companion_streak(self) -> int:
+        return self._rpc("companion_streak", {"p_user": self.default_owner_cached()}) or 0
+
     def companion_answered(self, question_id: str, answer_item: str | None) -> None:
         r = httpx.post(
             f"{self.base}/rpc/companion_answered",

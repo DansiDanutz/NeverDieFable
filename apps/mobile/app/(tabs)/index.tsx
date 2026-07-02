@@ -13,6 +13,7 @@ import { colors, spacing, type } from '@/theme';
 export default function TodayScreen() {
   const router = useRouter();
   const [questions, setQuestions] = useState<CompanionQuestion[] | null>(null);
+  const [streak, setStreak] = useState(0);
   const [offline, setOffline] = useState(false);
   const [answering, setAnswering] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -21,7 +22,7 @@ export default function TodayScreen() {
   const load = useCallback(() => {
     api
       .companionToday()
-      .then((r) => setQuestions(r.questions))
+      .then((r) => { setQuestions(r.questions); setStreak(r.streak ?? 0); })
       .catch(() => {
         setOffline(true);
         setQuestions(
@@ -37,8 +38,9 @@ export default function TodayScreen() {
   const submit = async (q: CompanionQuestion) => {
     if (!draft.trim()) return;
     try {
-      await api.answerCompanion(q.id, draft.trim());
+      const r = await api.answerCompanion(q.id, draft.trim());
       setSaved((s) => ({ ...s, [q.id]: true }));
+      if (typeof r.streak === 'number') setStreak(r.streak);
     } catch {
       // keep the draft so nothing is lost
     }
@@ -50,7 +52,9 @@ export default function TodayScreen() {
     <Screen>
       <Text style={type.title}>Good evening</Text>
       <Text style={[type.dim, { marginTop: 4, marginBottom: spacing.l }]}>
-        🔥 Keep your streak — every answer makes your mind, and theirs, more alive.
+        {streak > 0
+          ? `🕯️ ${streak}-day streak — every answer makes your mind, and theirs, more alive.`
+          : 'Answer one question tonight — start your streak, and grow your mind.'}
       </Text>
 
       <Text style={[type.label, { marginBottom: spacing.s }]}>The Companion asks</Text>

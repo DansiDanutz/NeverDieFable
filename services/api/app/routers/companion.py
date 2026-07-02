@@ -11,12 +11,10 @@ router = APIRouter()
 
 @router.get("/today")
 async def today(limit: int = 3) -> dict:
-    """Today's ranked questions. If the queue is empty, generate a fresh batch
-    by interviewing against what the Mind already knows."""
-    qs = engine.companion_today(limit)
-    if not qs:
-        qs = engine.generate_companion_questions("self", n=limit)
-    return {"questions": qs}
+    """The proactive daily ritual: a mix of questions for you and for the loved
+    one whose garden most needs tending, plus your streak. Generates a fresh
+    batch when the queue runs dry."""
+    return engine.daily_ritual(limit)
 
 
 @router.post("/generate")

@@ -185,13 +185,46 @@ def companion_today(limit: int = 3) -> list[dict]:
     return STORE.companion_today(limit) if LIVE else []
 
 
+def daily_ritual(limit: int = 3) -> dict:
+    """The proactive daily batch. Mixes a question for YOU with one about the
+    loved one whose garden is thinnest — so every day both your mind and theirs
+    grow. Returns the queued questions + your streak. This is the habit loop."""
+    if not LIVE:
+        return {"streak": 0, "questions": companion_today(limit)}
+
+    pending = STORE.companion_today(limit)
+    if len(pending) < limit:
+        reg = personas()
+        # find the departed persona with the least memory — most in need of love
+        departed = [(pid, p) for pid, p in reg.items() if p["kind"] == "departed"]
+        thinnest = None
+        if departed:
+            scored = [(pid, completeness(pid)["total"]) for pid, _ in departed]
+            thinnest = min(scored, key=lambda x: x[1])[0]
+
+        made = list(pending)
+        # a garden question about the thinnest loved one (for the whole family)
+        if thinnest and len([q for q in made if (q.get("gap_ref") or {}).get("persona_id") == thinnest]) == 0:
+            made += generate_companion_questions(thinnest, n=1)
+        # fill the rest with questions for the user's own mind
+        if len(made) < limit:
+            made += generate_companion_questions("self", n=limit - len(made))
+        pending = STORE.companion_today(limit)
+
+    return {"streak": STORE.companion_streak(), "questions": pending}
+
+
 def answer_companion(question_id: str, text: str, person_id: str = "self") -> dict:
-    """A companion answer becomes durable, embeddable memory of the subject."""
+    """A companion answer becomes durable, embeddable memory of the subject,
+    and advances the daily streak."""
     if not LIVE:
         return {"status": "demo"}
     mem_id = STORE.add_memory(person_id, text, source="companion answer", kind="story")
-    STORE.companion_answered(question_id, mem_id)
-    return {"status": "answered", "memory_id": mem_id}
+    # answer_item FKs to vault_item; the answer is a memory_chunk, so we mark the
+    # question answered without that link (the memory itself is already stored).
+    STORE.companion_answered(question_id, None)
+    STORE.companion_touch()
+    return {"status": "answered", "memory_id": mem_id, "streak": STORE.companion_streak()}
 
 
 def seed_departed_corpus(persona_id: str, per_seed: int = 12) -> dict:
