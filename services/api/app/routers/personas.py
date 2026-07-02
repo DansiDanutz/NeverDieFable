@@ -10,6 +10,24 @@ from app.schemas import PersonaCreate
 router = APIRouter()
 
 
+@router.get("")
+async def list_personas() -> dict:
+    """Registry the app renders: Garden cards, chat headers, voice status."""
+    out = []
+    for pid, p in engine.personas().items():
+        card = p.get("card") or {}
+        out.append({
+            "id": pid,
+            "name": p["name"],
+            "relationship": p.get("relationship"),
+            "kind": p["kind"],
+            "mode": p["mode"],
+            "has_voice": bool(p.get("voice_ref")),
+            "has_card": bool(card),
+        })
+    return {"personas": out}
+
+
 @router.post("")
 async def create_persona(req: PersonaCreate) -> dict:
     """Create a persona shell. Consent gate: kind=departed requires attesting a

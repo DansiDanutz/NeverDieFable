@@ -1,25 +1,77 @@
-import React from 'react';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text } from 'react-native';
+import { api } from '@/api';
 import { Card } from '@/components/Card';
 import { colors, spacing, type } from '@/theme';
 
-// CAPTURE — one modal for keeping anything. Everything is encrypted
-// on-device before upload; live recordings transcribe on the phone
-// (whisper.cpp) and only encrypted text syncs by default.
-const OPTIONS = [
-  { icon: '📷', title: 'Photo or scan', detail: 'Camera, document scanner, or import from your gallery.' },
-  { icon: '🎙️', title: 'Record a conversation', detail: 'Meetings and calls — transcribed on your phone, filed by the AI with who said what.' },
-  { icon: '🎤', title: 'Voice note', detail: 'A thought, a story, a memory. Also teaches your voice to your Mind.' },
-  { icon: '📄', title: 'Document or email', detail: 'Files, mail archives, WhatsApp exports — bulk import supported.' },
-  { icon: '🔐', title: 'A secret', detail: 'Sealed even from us. Opens only for whom you choose, when you choose.' },
-  { icon: '🕰️', title: 'Time capsule', detail: 'A message for the future — delivered by your avatar at the moment you pick.' },
-];
-
+// CAPTURE — one modal for keeping anything. Files upload straight to the
+// private vault bucket via one-time signed URLs.
 export default function Capture() {
+  const router = useRouter();
+  const [status, setStatus] = useState<string | null>(null);
+
+  const finish = (msg: string) => {
+    setStatus(msg);
+    setTimeout(() => router.back(), 1200);
+  };
+
+  const keepPhoto = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.9 });
+    if (res.canceled || !res.assets[0]) return;
+    const a = res.assets[0];
+    setStatus('Encrypting & uploading…');
+    try {
+      await api.uploadItem({
+        kind: a.type === 'video' ? 'video' : 'photo',
+        title: a.fileName ?? 'Photo',
+        uri: a.uri,
+        mimeType: a.mimeType ?? 'image/jpeg',
+      });
+      finish('✓ Kept forever');
+    } catch {
+      setStatus('⚠ Upload failed — is the backend running?');
+    }
+  };
+
+  const keepDocument = async () => {
+    const res = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+    if (res.canceled || !res.assets[0]) return;
+    const a = res.assets[0];
+    setStatus('Encrypting & uploading…');
+    try {
+      const isAudio = (a.mimeType ?? '').startsWith('audio');
+      await api.uploadItem({
+        kind: isAudio ? 'audio' : 'document',
+        title: a.name,
+        uri: a.uri,
+        mimeType: a.mimeType ?? 'application/octet-stream',
+      });
+      finish('✓ Kept forever');
+    } catch {
+      setStatus('⚠ Upload failed — is the backend running?');
+    }
+  };
+
+  const OPTIONS = [
+    { icon: '🖼️', title: 'Photo or video', detail: 'From your gallery. Faces are recognized and filed by person.', action: keepPhoto },
+    { icon: '📄', title: 'Document or audio file', detail: 'Files, voicemails, exports. A voicemail of a loved one can become their voice.', action: keepDocument },
+    { icon: '🎙️', title: 'Record a conversation', detail: 'Coming next: on-phone transcription, filed with who said what.', action: undefined },
+    { icon: '🔐', title: 'A secret', detail: 'Coming next: sealed even from us; opens only for whom you choose.', action: undefined },
+    { icon: '🕰️', title: 'Time capsule', detail: 'Coming next: a message delivered by your avatar at the moment you pick.', action: undefined },
+  ];
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {status && (
+        <Card style={{ borderColor: colors.gold }}>
+          <Text style={type.body}>{status}</Text>
+        </Card>
+      )}
       {OPTIONS.map((o) => (
-        <Card key={o.title}>
+        <Card key={o.title} onPress={o.action} style={o.action ? undefined : { opacity: 0.5 }}>
           <Text style={type.body}>
             {o.icon}  {o.title}
           </Text>
@@ -27,7 +79,7 @@ export default function Capture() {
         </Card>
       ))}
       <Text style={[type.dim, { marginTop: spacing.s }]}>
-        🔒 Encrypted on this phone before it goes anywhere. Only you hold the key.
+        🔒 Uploads go straight to your private vault. Only you hold the key.
       </Text>
     </ScrollView>
   );
