@@ -2,7 +2,7 @@ name: Quality
 
 on:
   push:
-    branches: [claude/neverdiefable-consolidation-pmjspv]
+    branches: [main, claude/neverdiefable-consolidation-pmjspv]
   pull_request:
 
 permissions:
