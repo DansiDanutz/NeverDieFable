@@ -2,12 +2,50 @@
 
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, HTTPException, UploadFile
 
 from app import engine
 from app.schemas import PersonaCreate
 
 router = APIRouter()
+
+MAX_VOICE_SAMPLE_BYTES = 10 * 1024 * 1024
+VOICE_SAMPLE_CHUNK_BYTES = 64 * 1024
+ALLOWED_VOICE_SAMPLE_TYPES = {
+    "audio/m4a",
+    "audio/mp4",
+    "audio/mpeg",
+    "audio/ogg",
+    "audio/wav",
+    "audio/webm",
+    "audio/x-m4a",
+    "audio/x-wav",
+}
+
+
+async def read_voice_sample(sample: UploadFile) -> bytes:
+    """Read one validated voice sample without unbounded memory growth."""
+    if sample.content_type not in ALLOWED_VOICE_SAMPLE_TYPES:
+        raise HTTPException(
+            status_code=415,
+            detail="Voice sample must be a supported audio file",
+        )
+
+    chunks: list[bytes] = []
+    total = 0
+    while chunk := await sample.read(VOICE_SAMPLE_CHUNK_BYTES):
+        total += len(chunk)
+        if total > MAX_VOICE_SAMPLE_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail="Voice sample exceeds the 10 MiB limit",
+            )
+        chunks.append(chunk)
+
+    if total == 0:
+        raise HTTPException(status_code=400, detail="Voice sample is empty")
+
+    return b"".join(chunks)
 
 
 @router.get("")
@@ -54,9 +92,16 @@ async def clone_voice(persona_id: UUID, sample: UploadFile) -> dict:
     voice speaks in /chat replies immediately."""
     from ai.voice import clone_elevenlabs
 
-    audio = await sample.read()
-    voice_id = clone_elevenlabs(f"neverdie-{persona_id}", audio,
-                                filename=sample.filename or "sample.mp3")
+    try:
+        audio = await read_voice_sample(sample)
+    finally:
+        await sample.close()
+
+    voice_id = clone_elevenlabs(
+        f"neverdie-{persona_id}",
+        audio,
+        filename=sample.filename or "sample.mp3",
+    )
     ref = f"elevenlabs:{voice_id}"
     engine.set_persona_voice(str(persona_id), ref)
     return {"persona_id": str(persona_id), "voice_ref": ref, "status": "ready"}
